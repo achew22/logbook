@@ -16,11 +16,15 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/achew22/logbook/config"
 	"github.com/achew22/logbook/parser"
 	"github.com/achew22/logbook/templater"
-	"os"
 )
+
+const dateFormat = "2006-01-02"
 
 func main() {
 	c := &config.Config{
@@ -28,7 +32,28 @@ func main() {
 		LogPath: "/usr/local/google/home/achew/logbook",
 	}
 	p := parser.New(c)
-	templater.Print(c, p.Parse())
+
+	todayPath := filepath.Join(c.LogPath, fmt.Sprintf("%s.md", time.Now().Format(dateFormat)))
+
+	if _, err := os.Stat(todayPath); err == nil {
+		fmt.Fprintf(os.Stderr, "A file already exists by the name %s\n", todayPath)
+		os.Exit(1)
+	}
+
+	out, err := os.Create(todayPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to create a log entry named %s.\nErr: %v", todayPath, err)
+		os.Exit(1)
+	}
+
+	today := parser.TimeToDate(time.Now())
+	text := templater.Print(c, p.Parse(), today)
+
+	out.Write([]byte(text))
+	if err := out.Close(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error writing file: %v", err)
+		os.Exit(1)
+	}
 
 	os.Exit(0)
 }

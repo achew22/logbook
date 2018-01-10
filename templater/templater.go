@@ -34,8 +34,8 @@ type extractedEntry struct {
 	text       string
 }
 
-func Print(c *config.Config, entries map[parser.Date]*parser.LogEntry) {
-	today := parser.TimeToDate(time.Now())
+func Print(c *config.Config, entries map[parser.Date]*parser.LogEntry, today Date) string {
+	out := ""
 	forToday := []extractedEntry{}
 	for _, entry := range entries {
 		for date, lines := range entry.FutureReferences {
@@ -50,30 +50,17 @@ func Print(c *config.Config, entries map[parser.Date]*parser.LogEntry) {
 		}
 	}
 
-	todayPath := filepath.Join(c.LogPath, fmt.Sprintf("%s.md", time.Now().Format(dateFormat)))
-
-	if _, err := os.Stat(todayPath); err == nil {
-		fmt.Fprintf(os.Stderr, "A file already exists by the name %s\n", todayPath)
-		os.Exit(1)
-	}
-
-	out, err := os.Create(todayPath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to create a log entry named %s.\nErr: %v", todayPath, err)
-		os.Exit(1)
-	}
-
-	fmt.Fprintf(out, "# %s - %s\n\n", c.Name, today.ToTime().Format(dateFormat))
+	out += fmt.Sprintf("# %s - %s\n\n", c.Name, today.ToTime().Format(dateFormat))
 
 	if len(forToday) > 0 {
 		fmt.Fprintf(out, "Reminders:\n")
 
 		for _, e := range forToday {
-			fmt.Fprintf(out, "From %s: %s\n", e.originDate.ToTime().Format(dateFormat), e.text)
+			out += fmt.Sprintf("From %s: %s\n", e.originDate.ToTime().Format(dateFormat), e.text)
 		}
 	}
 
-	fmt.Fprintf(out, "\n\n")
+	out += fmt.Sprintf("\n\n")
 
 	fmt.Fprintf(os.Stderr, "Wrote file\n")
 }
