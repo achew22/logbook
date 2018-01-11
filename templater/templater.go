@@ -18,7 +18,6 @@ package templater
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/achew22/logbook/config"
@@ -34,7 +33,7 @@ type extractedEntry struct {
 	text       string
 }
 
-func Print(c *config.Config, entries map[parser.Date]*parser.LogEntry, today Date) string {
+func Print(c *config.Config, entries map[parser.Date]*parser.LogEntry, today parser.Date) string {
 	out := ""
 	forToday := []extractedEntry{}
 	for _, entry := range entries {
@@ -53,7 +52,7 @@ func Print(c *config.Config, entries map[parser.Date]*parser.LogEntry, today Dat
 	out += fmt.Sprintf("# %s - %s\n\n", c.Name, today.ToTime().Format(dateFormat))
 
 	if len(forToday) > 0 {
-		fmt.Fprintf(out, "Reminders:\n")
+		out += "Reminders:\n"
 
 		for _, e := range forToday {
 			out += fmt.Sprintf("From %s: %s\n", e.originDate.ToTime().Format(dateFormat), e.text)
@@ -63,4 +62,5 @@ func Print(c *config.Config, entries map[parser.Date]*parser.LogEntry, today Dat
 	out += fmt.Sprintf("\n\n")
 
 	fmt.Fprintf(os.Stderr, "Wrote file\n")
+	return out
 }
