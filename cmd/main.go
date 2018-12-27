@@ -18,6 +18,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/achew22/logbook/config"
 	"github.com/achew22/logbook/parser"
@@ -29,7 +31,7 @@ const dateFormat = "2006-01-02"
 func main() {
 	c := &config.Config{
 		Name:    "Andrew Allen",
-		LogPath: "/usr/local/google/home/achew/logbook",
+		LogPath: os.ExpandEnv("${HOME}/logbook"),
 	}
 	p := parser.New(c)
 
