@@ -1,12 +1,13 @@
 package zoo
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	//"os"
-	"fmt"
+	"strings"
 	"testing"
-	"time"
+
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/achew22/logbook/config"
 	"github.com/achew22/logbook/parser"
@@ -15,25 +16,75 @@ import (
 
 const dateFormat = "2006-01-02"
 
-func TestData(t *testing.T) {
-	c := &config.Config{
-		Name:    "Andrew Allen",
-		LogPath: "./testdata",
-	}
-	p := parser.New(c)
+func trim(s string) string {
+	return strings.Trim(s, " \n\t")
+}
 
-	todayTime := time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
-	today := parser.TimeToDate(todayTime)
-	todayPath := filepath.Join(c.LogPath, fmt.Sprintf("%s.out", todayTime.Format(dateFormat)))
-	t.Run("", func(t *testing.T) {
-		want := templater.Print(c, p.Parse(), today)
-		got, err := ioutil.ReadFile(todayPath)
+func TestGeneration(t *testing.T) {
+	files, err := ioutil.ReadDir("./testdata")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			testCase(t, file.Name())
+		}
+	}
+}
+
+func testCase(t *testing.T, dir string) {
+	t.Run(dir, func(t *testing.T) {
+		logPath := filepath.Join("./testdata", dir)
+		c := &config.Config{
+			Name:    "Andrew Allen",
+			LogPath: logPath,
+		}
+
+		// Find all the .out files and generate the matching .md file. If the
+		// .md file doesn't match fail.
+
+		files, err := ioutil.ReadDir("./testdata")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, file := range files {
+			if file.IsDir() {
+				continue
+			}
+
+			name := file.Name()
+
+			if !strings.HasSuffix(name, ".out") {
+				return
+			}
+
+			toGenFilename := name[0 : len(name)-len(".out")]
+			d, err := parser.YmdToDate(toGenFilename)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
+
+			generateAndCompare(t, c, d)
+		}
+	})
+}
+
+func generateAndCompare(t *testing.T, c *config.Config, d parser.Date) {
+	fileName := fmt.Sprintf("%s.out", d.ToYmd())
+	longPath := filepath.Join(c.LogPath, fileName)
+	t.Run(fileName, func(t *testing.T) {
+		p := parser.New(c)
+		want := templater.Print(c, p.Parse(), d)
+		got, err := ioutil.ReadFile(longPath)
 		if err != nil {
 			t.Error(err)
 		}
 
-		if want != string(got) {
-			t.Errorf("Want: %s\nGot:  %s", want, got)
+		if diff := cmp.Diff(trim(string(got)), trim(want)); diff != "" {
+			t.Errorf("Difference - want + got:\n%s", diff)
 		}
 	})
 }

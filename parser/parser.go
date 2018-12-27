@@ -51,6 +51,10 @@ func (d Date) ToTime() time.Time {
 	return time.Date(d.Year, time.Month(d.Month), d.Year, 0, 0, 0, 0, time.UTC)
 }
 
+func (d Date) ToYmd() string {
+	return fmt.Sprintf("%d-%02d-%02d", d.Year, d.Month, d.Day)
+}
+
 type Parser struct {
 	config *config.Config
 
