@@ -16,7 +16,6 @@
 package parser
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -37,24 +36,6 @@ type LogEntry struct {
 	FutureReferences map[Date][]string
 }
 
-type Date struct {
-	Year  int
-	Month time.Month
-	Day   int
-}
-
-func (d Date) Equals(o Date) bool {
-	return d.Year == o.Year && d.Month == o.Month && d.Day == o.Day
-}
-
-func (d Date) ToTime() time.Time {
-	return time.Date(d.Year, time.Month(d.Month), d.Year, 0, 0, 0, 0, time.UTC)
-}
-
-func (d Date) ToYmd() string {
-	return fmt.Sprintf("%d-%02d-%02d", d.Year, d.Month, d.Day)
-}
-
 type Parser struct {
 	config *config.Config
 
@@ -71,25 +52,6 @@ func (p *Parser) Parse() map[Date]*LogEntry {
 	p.fileMap = map[Date]*LogEntry{}
 	filepath.Walk(p.config.LogPath, p.parseFile)
 	return p.fileMap
-}
-
-func YmdToDate(d string) (Date, error) {
-	// Parse Year-Month-Date.
-	p, err := time.Parse("2006-01-02", d)
-	if err != nil {
-		fmt.Printf("Unable to date (%s). err: %s\n", d, err)
-		return Date{}, err
-	}
-	return TimeToDate(p), nil
-}
-
-func TimeToDate(t time.Time) Date {
-	y, m, d := t.Date()
-	return Date{
-		Year:  y,
-		Month: m,
-		Day:   d,
-	}
 }
 
 func extractFutureReferences(d Date, b string) (map[Date][]string, error) {
