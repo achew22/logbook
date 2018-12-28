@@ -176,3 +176,20 @@ func TestInvalidDateOverride(t *testing.T) {
 		t.Errorf("Inequal stderr/out:\nwant: %q\ngot:  %q", want, gotString)
 	}
 }
+
+func TestCreateLogDirectory(t *testing.T) {
+	dir, cleanup := makeFakeHome(t)
+	defer cleanup()
+	t.Logf("Dir: %s", dir)
+
+	got, err := helperCommand(t, dir, "--date_override=2000-01-01").CombinedOutput()
+	gotString := trim(string(got))
+	want := fmt.Sprintf("Writing log entry for 2000-01-01\nCreating %s/logbook", dir)
+
+	if err != nil {
+		t.Errorf("Invocation failed:\nerr: %s\noutput: %s\n", err.Error(), got)
+	}
+	if gotString != want {
+		t.Errorf("Inequal stderr/out:\nwant: %q\ngot:  %q", want, gotString)
+	}
+}
