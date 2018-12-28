@@ -18,15 +18,10 @@ package templater
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/achew22/logbook/config"
 	"github.com/achew22/logbook/parser"
 )
-
-var _ = time.Now
-
-const dateFormat = "2006-01-02"
 
 type extractedEntry struct {
 	originDate parser.Date
@@ -49,17 +44,17 @@ func Print(c *config.Config, entries map[parser.Date]*parser.LogEntry, today par
 		}
 	}
 
-	out += fmt.Sprintf("# %s - %s\n\n", c.Name, today.ToTime().Format(dateFormat))
+	out += fmt.Sprintf("# %s - %s\n\n", c.Name, today.ToYmd())
 
 	if len(forToday) > 0 {
 		out += "Reminders:\n"
 
 		for _, e := range forToday {
-			out += fmt.Sprintf("From %s: %s\n", e.originDate.ToTime().Format(dateFormat), e.text)
+			out += fmt.Sprintf("From %s: %s\n", e.originDate.ToYmd(), e.text)
 		}
 	}
 
-	out += fmt.Sprintf("\n\n")
+	out += fmt.Sprintf("\n")
 
 	fmt.Fprintf(os.Stderr, "Wrote file\n")
 	return out

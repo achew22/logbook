@@ -16,6 +16,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,16 +27,37 @@ import (
 	"github.com/achew22/logbook/templater"
 )
 
-const dateFormat = "2006-01-02"
+var (
+	nameOverride = flag.String("name_override", "", "Overrides the name of the user in the heading. Example --name_override=\"Joe Armstrong\"")
+	dateOverride = flag.String("date_override", "", "Overrides the current date taking the form \"yyyy-mm-dd\". Example --date_override=1941-12-07")
+)
 
 func main() {
+	flag.Parse()
+
 	c := &config.Config{
-		Name:    "Andrew Allen",
+		Name:    *nameOverride,
 		LogPath: os.ExpandEnv("${HOME}/logbook"),
 	}
 	p := parser.New(c)
 
-	todayPath := filepath.Join(c.LogPath, fmt.Sprintf("%s.md", time.Now().Format(dateFormat)))
+	if *nameOverride == "" {
+		c.Name = "Andrew Allen"
+	}
+
+	var today parser.Date
+	if *dateOverride == "" {
+		today = parser.TimeToDate(time.Now())
+	} else {
+		var err error
+		today, err = parser.YmdToDate(*dateOverride)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Invalid --date_override provided. %s", err)
+			os.Exit(1)
+		}
+	}
+	fmt.Fprintf(os.Stderr, "Writing log entry for %s\n", today.ToYmd())
+	todayPath := filepath.Join(c.LogPath, today.ToYmd()+".md")
 
 	if _, err := os.Stat(todayPath); err == nil {
 		fmt.Fprintf(os.Stderr, "A file already exists by the name %s\n", todayPath)
@@ -48,7 +70,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	today := parser.TimeToDate(time.Now())
 	text := templater.Print(c, p.Parse(), today)
 
 	out.Write([]byte(text))
