@@ -16,6 +16,7 @@
 package parser
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -34,6 +35,25 @@ type LogEntry struct {
 	Date Date
 
 	FutureReferences map[Date][]string
+}
+
+func marshalFutureReferences(r map[Date][]string) map[string][]string {
+	out := map[string][]string{}
+	for k, v := range r {
+		out[k.ToYmd()] = v
+	}
+	return out
+}
+func (l *LogEntry) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		Path             string              `json:"path"`
+		Date             string              `json:"date"`
+		FutureReferences map[string][]string `json:"futureReferences"`
+	}{
+		Path:             l.Path,
+		Date:             l.Date.ToYmd(),
+		FutureReferences: marshalFutureReferences(l.FutureReferences),
+	})
 }
 
 type Parser struct {
