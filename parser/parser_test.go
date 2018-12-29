@@ -74,8 +74,8 @@ func TestParsing(t *testing.T) {
 				t.Error(err)
 			}
 
-			got := strings.Split(out.String(), "\n")
-			want := strings.Split(string(goldenData), "\n")
+			got := strings.Split(trim(out.String()), "\n")
+			want := strings.Split(trim(string(goldenData)), "\n")
 
 			if diff := cmp.Diff(got, want); diff != "" {
 				t.Errorf("Differences:\n%s", diff)
