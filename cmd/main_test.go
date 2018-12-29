@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -31,17 +32,38 @@ func makeFakeHome(t *testing.T) (string, func()) {
 	}
 }
 
-func makeLogEntry(t *testing.T, homeDir, fileName, contents string) {
+func makeLogbookDirectoryInHome(t *testing.T, homeDir string) {
 	// MkdirAll instead of Mkdir so that if you make it multiple times no
 	// one cares.
 	err := os.MkdirAll(filepath.Join(homeDir, "logbook"), 0700)
 	if err != nil {
 		t.Error(err)
 	}
+}
 
-	err = ioutil.WriteFile(filepath.Join(homeDir, "logbook", fileName+".md"), []byte(contents), 0600)
+func makeLogEntry(t *testing.T, homeDir, fileName, contents string) {
+	makeLogbookDirectoryInHome(t, homeDir)
+
+	err := ioutil.WriteFile(filepath.Join(homeDir, "logbook", fileName+".md"), []byte(contents), 0600)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func cp(t *testing.T, s, d string) {
+	src, err := os.Open(s)
+	if err != nil {
+		t.Fatalf("Unable to os.Open(%s): %v", s, err)
+	}
+	defer src.Close()
+
+	dst, err := os.Create(d)
+	if err != nil {
+		t.Fatalf("Unable to os.Create(%s): %v", d, err)
+	}
+	defer dst.Close()
+	if _, err = io.Copy(dst, src); err != nil {
+		t.Fatalf("Unable to io.Copy(%s, %s): %v", s, d, err)
 	}
 }
 
