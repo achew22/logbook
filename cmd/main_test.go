@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -52,7 +53,7 @@ func assertLogEntry(t *testing.T, homeDir, fileName, want string) {
 	}
 
 	if diff := cmp.Diff(strings.Split(string(got), "\n"), strings.Split(want, "\n")); diff != "" {
-		t.Errorf("Diff for %s:\n!!! (- = got, + = want)\n%s", fullPath, diff)
+		t.Errorf("Diff for %s:\n!!! (- = got, + = want)\n%s\nGot: %q", fullPath, diff, got)
 	}
 }
 
@@ -89,6 +90,14 @@ func TestHelperProcess(t *testing.T) {
 	}
 	os.Args = newArgs
 
+	// Panic handling is overridden by the Golang test handler. If you don't
+	// do this the panic just disappears silently.
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Panic in main. Panic message: %q\n", r)
+		}
+	}()
+
 	// Invoke the main for the command.
 	main()
 }
@@ -111,22 +120,21 @@ It was important!
 `)
 
 	got, err := helperCommand(t, dir).CombinedOutput()
-	gotString := trim(string(got))
+	if err != nil {
+		t.Errorf("Invocation failed: %v\ngot:  %q", err, got)
+	}
+
 	today := parser.TimeToDate(time.Now()).ToYmd()
 	want := "Writing log entry for " + today + "\nWrote file"
-	if err != nil {
-		t.Errorf("Invocation failed: %v\nwant: %q\ngot:  %q", err, want, gotString)
-	}
+	gotString := trim(string(got))
 	if gotString != want {
-		t.Errorf("Inequal stderr/out:\nwant: %X\ngot:  %X", want, gotString)
+		t.Errorf("Inequal stderr/out:\nwant: %q\ngot:  %q", want, gotString)
 	}
 
 	assertLogEntry(t, dir, today, "# Andrew Allen - "+today+`
 
 Reminders:
-From 2018-12-28: Tomorrow text
-From 2018-12-28: Tomorrow text
-From 2018-12-28: Tomorrow text
+From `+yesterday+`: Tomorrow text
 
 `)
 }

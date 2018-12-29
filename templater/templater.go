@@ -31,27 +31,22 @@ type extractedEntry struct {
 
 func Print(c *config.Config, entries map[parser.Date]*parser.LogEntry, today parser.Date) string {
 	buf := &strings.Builder{}
-	forToday := []extractedEntry{}
-	for _, entry := range entries {
-		for date, lines := range entry.FutureReferences {
-			if today.Equals(date) {
-				for _, line := range lines {
-					forToday = append(forToday, extractedEntry{
-						date,
-						line,
-					})
-				}
-			}
-		}
-	}
 
 	fmt.Fprintf(buf, "# %s - %s\n\n", c.Name, today.ToYmd())
 
-	if len(forToday) > 0 {
+	todayLog, ok := entries[today]
+	if !ok {
+		fmt.Fprintf(buf, "There are no reminders for today\n")
+		// There are no entries waiting for this day's render.
+		return buf.String()
+	}
+	if len(todayLog.PastReferences) > 0 {
 		fmt.Fprintf(buf, "Reminders:\n")
 
-		for _, e := range forToday {
-			fmt.Fprintf(buf, "From %s: %s\n", e.originDate.ToYmd(), e.text)
+		for originDate, messages := range todayLog.PastReferences {
+			for _, m := range messages {
+				fmt.Fprintf(buf, "From %s: %s\n", originDate.ToYmd(), m)
+			}
 		}
 	}
 

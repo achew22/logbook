@@ -38,7 +38,8 @@ func TestSimpleTemplating(t *testing.T) {
 	}, today), " \t\n"), "\n")
 	want := strings.Split(strings.Trim(`
 # Andrew Allen - 2014-02-14
-	`, " \t\n"), "\n")
+
+There are no reminders for today`, " \t\n"), "\n")
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Errorf("Differences:\n%s\nGot:  %q\nWant: %q", diff, got, want)
 	}

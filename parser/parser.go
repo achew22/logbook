@@ -34,10 +34,10 @@ type LogEntry struct {
 	Path string
 	Date Date
 
-	FutureReferences map[Date][]string
+	PastReferences map[Date][]string
 }
 
-func marshalFutureReferences(r map[Date][]string) map[string][]string {
+func marshalPastReferences(r map[Date][]string) map[string][]string {
 	out := map[string][]string{}
 	for k, v := range r {
 		out[k.ToYmd()] = v
@@ -46,13 +46,13 @@ func marshalFutureReferences(r map[Date][]string) map[string][]string {
 }
 func (l *LogEntry) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		Path             string              `json:"path"`
-		Date             string              `json:"date"`
-		FutureReferences map[string][]string `json:"futureReferences"`
+		Path           string              `json:"path"`
+		Date           string              `json:"date"`
+		PastReferences map[string][]string `json:"pastReferences"`
 	}{
-		Path:             l.Path,
-		Date:             l.Date.ToYmd(),
-		FutureReferences: marshalFutureReferences(l.FutureReferences),
+		Path:           l.Path,
+		Date:           l.Date.ToYmd(),
+		PastReferences: marshalPastReferences(l.PastReferences),
 	})
 }
 
@@ -70,22 +70,49 @@ func New(config *config.Config) *Parser {
 
 func (p *Parser) Parse() map[Date]*LogEntry {
 	p.fileMap = map[Date]*LogEntry{}
+
+	// First walk all the files in thie directory extracting any forward looking information they might have.
 	filepath.Walk(p.config.LogPath, p.parseFile)
+
 	return p.fileMap
 }
 
-func extractFutureReferences(d Date, b string) (map[Date][]string, error) {
-	r := map[Date][]string{}
-
-	r[TimeToDate(time.Now().Add(24*time.Hour))] = []string{
-		"More text",
+// getOrCreateLog either gets from the eisting fileMap a date or creates it.
+func (p *Parser) getOrCreateLog(d Date) *LogEntry {
+	_, ok := p.fileMap[d]
+	if !ok {
+		p.fileMap[d] = &LogEntry{
+			Date:           d,
+			Path:           filepath.Join(p.config.LogPath, d.ToYmd()),
+			PastReferences: map[Date][]string{},
+		}
 	}
 
-	r[TimeToDate(time.Now())] = []string{
-		"Tomorrow text",
+	return p.fileMap[d]
+}
+
+func (p *Parser) emitEvent(from, to Date, message string) error {
+	toLog := p.getOrCreateLog(to)
+	toLog.PastReferences[from] = append(toLog.PastReferences[from], message)
+
+	return nil
+}
+
+// emitFutureReferences parses the string of the content for important
+// dates and returns a list of dates/events that this entry created.
+func (p *Parser) emitFutureReferences(d Date, content string) error {
+	err := p.emitEvent(d, TimeToDate(d.ToTime().AddDate(0, 0, 5)), "More text")
+	if err != nil {
+		return err
 	}
 
-	return r, nil
+	// Pretend we pared out "Tomorrow: More text"
+	err = p.emitEvent(d, TimeToDate(d.ToTime().AddDate(0, 0, 1)), "Tomorrow text")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p *Parser) parseFile(path string, info os.FileInfo, err error) error {
@@ -93,8 +120,8 @@ func (p *Parser) parseFile(path string, info os.FileInfo, err error) error {
 		return nil
 	}
 
-	_, file := filepath.Split(path)
-	d, err := YmdToDate(file[:len(file)-3])
+	name := filepath.Base(path)
+	d, err := YmdToDate(name[:len(name)-len(".md")])
 	if err != nil {
 		return err
 	}
@@ -104,17 +131,5 @@ func (p *Parser) parseFile(path string, info os.FileInfo, err error) error {
 		return err
 	}
 
-	futureReferences, err := extractFutureReferences(d, string(b))
-	if err != nil {
-		return err
-	}
-
-	l := &LogEntry{
-		Date:             d,
-		Path:             path,
-		FutureReferences: futureReferences,
-	}
-
-	p.fileMap[d] = l
-	return nil
+	return p.emitFutureReferences(d, string(b))
 }

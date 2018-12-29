@@ -50,6 +50,7 @@ func TestEqualDate(t *testing.T) {
 		a Date
 		b Date
 	}{
+		"RoundTripThroughTime":    {mustYmdToDate("2011-04-02"), TimeToDate(mustYmdToDate("2011-04-02").ToTime())},
 		"YmdVsManual":             {mustYmdToDate("2011-04-02"), Date{Year: 2011, Month: time.April, Day: 2}},
 		"TimeVsManual":            {TimeToDate(time.Date(2012, time.July, 7, 0, 0, 0, 0, time.UTC)), Date{Year: 2012, Month: time.July, Day: 7}},
 		"YmdVsTime midnight":      {mustYmdToDate("2013-03-02"), TimeToDate(time.Date(2013, time.March, 2, 0, 0, 0, 0, time.UTC))},

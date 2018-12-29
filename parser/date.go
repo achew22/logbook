@@ -31,7 +31,7 @@ func (d Date) Equals(o Date) bool {
 }
 
 func (d Date) ToTime() time.Time {
-	return time.Date(d.Year, time.Month(d.Month), d.Year, 0, 0, 0, 0, time.UTC)
+	return time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, time.UTC)
 }
 
 func (d Date) ToYmd() string {
