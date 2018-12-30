@@ -17,6 +17,9 @@ package parser
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -54,4 +57,48 @@ func TimeToDate(t time.Time) Date {
 		Month: m,
 		Day:   d,
 	}
+}
+
+var timespecMatchers = map[*regexp.Regexp]func(Date, []string) (Date, error){
+	// in X days
+	// in X weeks
+	// in X months
+	// in X years
+	regexp.MustCompile("(in )?(\\d+) (day|week|month|year)s?"): func(d Date, matches []string) (Date, error) {
+		count, err := strconv.Atoi(matches[2])
+		if err != nil {
+			return d, fmt.Errorf("Unable to convert %q to int: %v", matches[2], err)
+		}
+		interval := matches[3]
+
+		years, months, days := 0, 0, 0
+		switch interval {
+		case "day":
+			days = count
+		case "week":
+			days = count * 7
+		case "month":
+			months = count
+		case "years":
+			years = count
+		}
+		return TimeToDate(d.ToTime().AddDate(years, months, days)), nil
+	},
+
+	// tomorrow
+	regexp.MustCompile("tomorrow"): func(d Date, matches []string) (Date, error) {
+		return TimeToDate(d.ToTime().AddDate(0, 0, 1)), nil
+	},
+}
+
+func ParseTimespec(d Date, spec string) (Date, error) {
+	spec = strings.ToLower(spec)
+
+	for r, f := range timespecMatchers {
+		if matches := r.FindStringSubmatch(spec); matches != nil {
+			return f(d, matches)
+		}
+	}
+
+	return d, fmt.Errorf("No valid spec parser found: %s", spec)
 }

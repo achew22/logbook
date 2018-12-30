@@ -17,18 +17,21 @@ package parser
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
-	"time"
+
+	blackfriday "gopkg.in/russross/blackfriday.v2"
 
 	"github.com/achew22/logbook/config"
 )
 
-var relativeDateMap = map[string]time.Duration{
-	"tomorrow": 24 * time.Hour,
-}
+var (
+	expressionFinder = regexp.MustCompile("(.+):(.+)")
+)
 
 type LogEntry struct {
 	Path string
@@ -91,28 +94,9 @@ func (p *Parser) getOrCreateLog(d Date) *LogEntry {
 	return p.fileMap[d]
 }
 
-func (p *Parser) emitEvent(from, to Date, message string) error {
+func (p *Parser) emitEvent(from, to Date, message string) {
 	toLog := p.getOrCreateLog(to)
 	toLog.PastReferences[from] = append(toLog.PastReferences[from], message)
-
-	return nil
-}
-
-// emitFutureReferences parses the string of the content for important
-// dates and returns a list of dates/events that this entry created.
-func (p *Parser) emitFutureReferences(d Date, content string) error {
-	err := p.emitEvent(d, TimeToDate(d.ToTime().AddDate(0, 0, 5)), "More text")
-	if err != nil {
-		return err
-	}
-
-	// Pretend we pared out "Tomorrow: More text"
-	err = p.emitEvent(d, TimeToDate(d.ToTime().AddDate(0, 0, 1)), "Tomorrow text")
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (p *Parser) parseFile(path string, info os.FileInfo, err error) error {
@@ -131,5 +115,41 @@ func (p *Parser) parseFile(path string, info os.FileInfo, err error) error {
 		return err
 	}
 
-	return p.emitFutureReferences(d, string(b))
+	markdown := blackfriday.New()
+	rootNode := markdown.Parse(b)
+	rootNode.Walk(p.walkNodes(d))
+
+	return nil
+}
+
+func (p *Parser) walkNodes(d Date) func(n *blackfriday.Node, entering bool) blackfriday.WalkStatus {
+	return func(n *blackfriday.Node, entering bool) blackfriday.WalkStatus {
+		switch n.Type {
+		case blackfriday.Document, blackfriday.Heading, blackfriday.Paragraph:
+			// These nodes can never contain any prospective information, but nodes
+			// inside of them can contain info. GoToNext recurses into those nodes.
+			return blackfriday.GoToNext
+		case blackfriday.Text:
+			p.parseEventText(d, string(n.Literal))
+			return blackfriday.GoToNext
+		default:
+			p.emitEvent(d, d, fmt.Sprintf("Unknown node: %s %q", n, n.Literal))
+			return blackfriday.GoToNext
+		}
+	}
+}
+
+func (p *Parser) parseEventText(d Date, text string) {
+	r := expressionFinder.FindStringSubmatch(text)
+	if len(r) < 3 {
+		return
+	}
+
+	timespec, remark := r[1], r[2]
+	reminderDate, err := ParseTimespec(d, timespec)
+	if err != nil {
+		panic(err)
+	}
+
+	p.emitEvent(d, reminderDate, trim(remark))
 }

@@ -138,7 +138,7 @@ It was an okay day
 	yesterday := parser.TimeToDate(time.Now().AddDate(0, 0, -1)).ToYmd()
 	makeLogEntry(t, dir, yesterday, `# Yesterday stuff
 
-It was important!
+tomorrow: Tomorrow text
 `)
 
 	got, err := helperCommand(t, dir).CombinedOutput()

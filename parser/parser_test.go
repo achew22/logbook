@@ -34,10 +34,6 @@ var (
 	updateGoldens = flag.Bool("update_goldens", false, "Set this to true to update the golden file that you normally compare against")
 )
 
-func trim(s string) string {
-	return strings.Trim(s, " \n\t")
-}
-
 func TestParsing(t *testing.T) {
 	files, err := ioutil.ReadDir("./testdata")
 	if err != nil {

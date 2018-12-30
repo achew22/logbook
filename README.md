@@ -11,11 +11,11 @@ exits.
 
 ## Example output
 
-If you run this program on 2018-01-01, it will make a file
-`$HOME/logbook/2018-01-01.md` with the following content:
+If you run this program on 2000-01-01, it will make a file
+`$HOME/logbook/2000-01-01.md` with the following content:
 
 ```
-# Andrew Allen - 2018-01-01
+# Andrew Allen - 2000-01-01
 
 
 ```
@@ -23,20 +23,20 @@ If you run this program on 2018-01-01, it will make a file
 As your day progressed you might make the file look like this;
 
 ```
-# Andrew Allen - 2018-01-01
+# Andrew Allen - 2000-01-01
 
 Today I did stuff and things.
+
 Tomorrow: I will finish the thing I forgot to do.
 ```
 
-Then when you ran the program on 2018-01-02, you would get the output:
+Then when you ran the program on 2000-01-02, you would get the output:
 
 ```
-# Andrew Allen - 2018-01-01
+# Andrew Allen - 2000-01-02
 
 Reminders:
-2018-01-01: I will finish the thing I forgot to do.
-
+From 2000-01-01: I will finish the thing I forgot to do.
 
 ```
 
