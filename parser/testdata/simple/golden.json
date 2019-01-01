@@ -1,6 +1,6 @@
 {
   "2012-02-29": {
-    "path": "testdata/simple/2012-02-29",
+    "path": "testdata/simple/2012-02-29.md",
     "date": "2012-02-29",
     "pastReferences": {
       "2012-02-28": [
@@ -9,7 +9,7 @@
     }
   },
   "2012-03-04": {
-    "path": "testdata/simple/2012-03-04",
+    "path": "testdata/simple/2012-03-04.md",
     "date": "2012-03-04",
     "pastReferences": {
       "2012-02-28": [

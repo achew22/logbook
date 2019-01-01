@@ -17,7 +17,7 @@ var (
 
 const dateFormat = "2006-01-02"
 
-func TestGeneration(t *testing.T) {
+func TestZoo(t *testing.T) {
 	files, err := ioutil.ReadDir("./testdata")
 	if err != nil {
 		t.Fatal(err)
@@ -88,6 +88,7 @@ func testCase(t *testing.T, dir string) {
 			if *updateGoldens {
 				src := filepath.Join(homeDir, "logbook", d.ToYmd()+".md")
 				dst := filepath.Join(dir, d.ToYmd()+".out")
+				t.Logf("CPing: %s to %s", src, dst)
 				cp(t, src, dst)
 			}
 		}

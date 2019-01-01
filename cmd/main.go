@@ -80,11 +80,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	text := templater.Print(c, p.Parse(), today)
+	parsedOutput := p.Parse()
+	text := templater.Print(c, parsedOutput, today)
 
-	out.Write([]byte(text))
-	if err := out.Close(); err != nil {
+	if _, err := out.Write([]byte(text)); err != nil {
 		fmt.Fprintf(os.Stderr, "Error writing file: %v", err)
+		os.Exit(1)
+	}
+
+	if err := out.Close(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error closing file: %v", err)
 		os.Exit(1)
 	}
 

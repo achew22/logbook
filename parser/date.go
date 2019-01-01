@@ -100,5 +100,5 @@ func ParseTimespec(d Date, spec string) (Date, error) {
 		}
 	}
 
-	return d, fmt.Errorf("No valid spec parser found: %s", spec)
+	return d, fmt.Errorf("no valid spec parser found for spec %q", spec)
 }

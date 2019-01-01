@@ -33,11 +33,17 @@ var (
 	expressionFinder = regexp.MustCompile("(.+):(.+)")
 )
 
+type ParseError struct {
+	Message string `json:"message"`
+}
+
 type LogEntry struct {
 	Path string
 	Date Date
 
 	PastReferences map[Date][]string
+
+	Errors []*ParseError
 }
 
 func marshalPastReferences(r map[Date][]string) map[string][]string {
@@ -52,10 +58,12 @@ func (l *LogEntry) MarshalJSON() ([]byte, error) {
 		Path           string              `json:"path"`
 		Date           string              `json:"date"`
 		PastReferences map[string][]string `json:"pastReferences"`
+		Errors         []*ParseError       `json:"errors,omitempty"`
 	}{
 		Path:           l.Path,
 		Date:           l.Date.ToYmd(),
 		PastReferences: marshalPastReferences(l.PastReferences),
+		Errors:         l.Errors,
 	})
 }
 
@@ -86,12 +94,20 @@ func (p *Parser) getOrCreateLog(d Date) *LogEntry {
 	if !ok {
 		p.fileMap[d] = &LogEntry{
 			Date:           d,
-			Path:           filepath.Join(p.config.LogPath, d.ToYmd()),
+			Path:           filepath.Join(p.config.LogPath, d.ToYmd()) + ".md",
 			PastReferences: map[Date][]string{},
+			Errors:         []*ParseError{},
 		}
 	}
 
 	return p.fileMap[d]
+}
+
+func (p *Parser) emitError(d Date, err error) {
+	toLog := p.getOrCreateLog(d)
+	toLog.Errors = append(toLog.Errors, &ParseError{
+		Message: err.Error(),
+	})
 }
 
 func (p *Parser) emitEvent(from, to Date, message string) {
@@ -148,7 +164,7 @@ func (p *Parser) parseEventText(d Date, text string) {
 	timespec, remark := r[1], r[2]
 	reminderDate, err := ParseTimespec(d, timespec)
 	if err != nil {
-		panic(err)
+		p.emitError(d, err)
 	}
 
 	p.emitEvent(d, reminderDate, trim(remark))

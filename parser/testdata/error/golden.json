@@ -1,0 +1,20 @@
+{
+  "2012-02-28": {
+    "path": "testdata/error/2012-02-28.md",
+    "date": "2012-02-28",
+    "pastReferences": {
+      "2012-02-28": [
+        "Do stuff",
+        "More stuff"
+      ]
+    },
+    "errors": [
+      {
+        "message": "no valid spec parser found for spec \"tmrrow\""
+      },
+      {
+        "message": "no valid spec parser found for spec \"in days\""
+      }
+    ]
+  }
+}

@@ -36,17 +36,36 @@ func Print(c *config.Config, entries map[parser.Date]*parser.LogEntry, today par
 
 	todayLog, ok := entries[today]
 	if !ok {
-		fmt.Fprintf(buf, "There are no reminders for today\n")
-		// There are no entries waiting for this day's render.
-		return buf.String()
-	}
-	if len(todayLog.PastReferences) > 0 {
-		fmt.Fprintf(buf, "Reminders:\n")
+		fmt.Fprintf(buf, "There are no reminders for today\n\n")
+	} else {
+		if len(todayLog.PastReferences) > 0 {
+			fmt.Fprintf(buf, "## Reminders:\n\n")
 
-		for originDate, messages := range todayLog.PastReferences {
-			for _, m := range messages {
-				fmt.Fprintf(buf, "From %s: %s\n", originDate.ToYmd(), m)
+			for originDate, messages := range todayLog.PastReferences {
+				fmt.Fprintf(buf, "From %s:\n\n", originDate.ToYmd())
+				for _, m := range messages {
+					fmt.Fprintf(buf, " *  %s\n", m)
+				}
 			}
+		}
+		fmt.Fprintf(buf, "\n")
+	}
+
+	parseErrors := map[parser.Date][]*parser.ParseError{}
+	for d, entry := range entries {
+		if len(entry.Errors) > 0 {
+			parseErrors[d] = entry.Errors
+		}
+	}
+
+	if len(parseErrors) > 0 {
+		fmt.Fprintf(buf, "## Parse errors\n\n")
+		for d, errors := range parseErrors {
+			fmt.Fprintf(buf, "From %s:\n\n", d.ToYmd())
+			for _, err := range errors {
+				fmt.Fprintf(buf, " *  %s\n", err.Message)
+			}
+			fmt.Fprintf(buf, "\n")
 		}
 	}
 

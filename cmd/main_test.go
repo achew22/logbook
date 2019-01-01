@@ -124,7 +124,7 @@ func TestHelperProcess(t *testing.T) {
 	main()
 }
 
-func TestBasicInvocation(t *testing.T) {
+func TestInvocationStdoutAndStderr(t *testing.T) {
 	dir, cleanup := makeFakeHome(t)
 	defer cleanup()
 	t.Logf("Dir: %s", dir)
@@ -152,13 +152,6 @@ tomorrow: Tomorrow text
 	if gotString != want {
 		t.Errorf("Inequal stderr/out:\nwant: %q\ngot:  %q", want, gotString)
 	}
-
-	assertLogEntry(t, dir, today, "# Andrew Allen - "+today+`
-
-Reminders:
-From `+yesterday+`: Tomorrow text
-
-`)
 }
 
 func TestInvalidDateOverride(t *testing.T) {

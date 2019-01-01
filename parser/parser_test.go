@@ -78,7 +78,7 @@ func TestParsing(t *testing.T) {
 			}
 
 			if *updateGoldens {
-				goldenWriter, err := os.OpenFile(goldenPath, os.O_TRUNC|os.O_RDWR|os.O_CREATE, 0755)
+				goldenWriter, err := os.OpenFile(goldenPath, os.O_TRUNC|os.O_RDWR|os.O_CREATE, 0644)
 
 				if err != nil {
 					t.Error(err)

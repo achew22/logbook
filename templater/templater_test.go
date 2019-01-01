@@ -1,3 +1,6 @@
+// templater tests are primarily sanity checking. The real testing is done in
+// the testing zoo which is a part of the cmd package.
+
 package templater
 
 import (
