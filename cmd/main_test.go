@@ -147,7 +147,8 @@ tomorrow: Tomorrow text
 	}
 
 	today := parser.TimeToDate(time.Now()).ToYmd()
-	want := "Writing log entry for " + today + "\nWrote file"
+	want := fmt.Sprintf("Writing log entry for %s\nWrote file \"%s/logbook/%s.md\"", today, dir, today)
+
 	gotString := trim(string(got))
 	if gotString != want {
 		t.Errorf("Inequal stderr/out:\nwant: %q\ngot:  %q", want, gotString)
@@ -177,7 +178,7 @@ func TestCreateLogDirectory(t *testing.T) {
 
 	got, err := helperCommand(t, dir, "--date_override=2000-01-01").CombinedOutput()
 	gotString := trim(string(got))
-	want := fmt.Sprintf("Writing log entry for 2000-01-01\nCreating %s/logbook", dir)
+	want := fmt.Sprintf("Writing log entry for 2000-01-01\nCreating %s/logbook\nWrote file \"%s/logbook/2000-01-01.md\"", dir, dir)
 
 	if err != nil {
 		t.Errorf("Invocation failed:\nerr: %s\noutput: %s\n", err.Error(), got)

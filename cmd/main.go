@@ -59,7 +59,7 @@ func main() {
 	fmt.Fprintf(os.Stderr, "Writing log entry for %s\n", today.ToYmd())
 
 	if _, err := os.Stat(c.LogPath); err != nil {
-		fmt.Fprintf(os.Stderr, "Creating %s", c.LogPath)
+		fmt.Fprintf(os.Stderr, "Creating %s\n", c.LogPath)
 		err := os.MkdirAll(c.LogPath, 0777)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Log path %s does not exist and could not be created\n", c.LogPath)
@@ -92,6 +92,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error closing file: %v", err)
 		os.Exit(1)
 	}
+
+	fmt.Fprintf(os.Stderr, "Wrote file %q\n", out.Name())
 
 	os.Exit(0)
 }

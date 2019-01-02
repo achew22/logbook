@@ -17,7 +17,6 @@ package templater
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/achew22/logbook/config"
@@ -70,7 +69,5 @@ func Print(c *config.Config, entries map[parser.Date]*parser.LogEntry, today par
 	}
 
 	fmt.Fprintf(buf, "\n")
-
-	fmt.Fprintf(os.Stderr, "Wrote file\n")
 	return buf.String()
 }
