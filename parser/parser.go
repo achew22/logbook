@@ -155,17 +155,39 @@ func (p *Parser) walkNodes(d Date) func(n *blackfriday.Node, entering bool) blac
 	}
 }
 
+type find struct {
+	timespec string
+	remark   string
+}
+
 func (p *Parser) parseEventText(d Date, text string) {
-	r := expressionFinder.FindStringSubmatch(text)
-	if len(r) < 3 {
+	var findings []find
+	for _, line := range strings.Split(text, "\n") {
+		r := expressionFinder.FindStringSubmatch(line)
+		if len(r) >= 3 {
+			findings = append(findings, find{
+				timespec: r[1],
+				remark:   r[2],
+			})
+		} else {
+			if len(findings) > 0 {
+				// Line already has \n stripped off since we split on \n.
+				findings[len(findings)-1].remark += " " + line
+			}
+		}
+	}
+
+	// Nothing was extracted, don't attempt to parse.
+	if len(findings) == 0 {
 		return
 	}
 
-	timespec, remark := r[1], r[2]
-	reminderDate, err := ParseTimespec(d, timespec)
-	if err != nil {
-		p.emitError(d, err)
-	}
+	for _, f := range findings {
+		reminderDate, err := ParseTimespec(d, f.timespec)
+		if err != nil {
+			p.emitError(d, err)
+		}
 
-	p.emitEvent(d, reminderDate, trim(remark))
+		p.emitEvent(d, reminderDate, trim(f.remark))
+	}
 }
