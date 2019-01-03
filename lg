@@ -1,0 +1,88 @@
+#! /usr/bin/env bash
+
+# Bootstrapping script that downloads, compiles, and launches logbook.
+readonly LOGBOOK="${HOME}/logbook"
+readonly MOTD_CACHE="/tmp/motd.cache"
+
+# Fetches the latest version of logbook and compiles it into $GOPATH/bin.
+update_logbook() {
+  GOPATH="${GOPATH-${HOME}/go}"
+  cd "${GOPATH}/src"
+  go get -u github.com/achew22/logbook/...
+  go build -i -o "${GOPATH}/bin/logbook" github.com/achew22/logbook/cmd
+}
+
+# Generate a MOTD file and fill it with something. The expected format is that
+# each MOTD should be one line.
+update_motd() {
+  # If you have a MOTD that is read from a cache, you can update it here.
+  /usr/games/fortune || \
+    echo "You can display a MOTD by running \`apt install fortunes\`"
+}
+
+# Take in a string and make it ridiculous.
+rediculify() {
+  quote="$1";shift
+
+  cowsay=("cat" "-")
+  if [[ -x /usr/games/cowsay ]]; then
+    cowsay=("/usr/games/cowsay")
+  fi
+
+  lolcat=("cat" "-")
+  if [[ -x /usr/games/lolcat ]]; then
+    lolcat=("/usr/games/lolcat")
+  fi
+
+  echo "${quote}" | ${cowsay[@]} | "${lolcat[@]}"
+}
+
+# Extracts one MOTD message from the MOTD cache. If there is only one entry it
+# will just grab that.
+get_one_motd() {
+  shuf -n 1 "${MOTD_CACHE}"
+}
+
+print_motd() {
+  cat - <<EOF
+Your quote of the day:
+EOF
+  rediculify "$(get_one_motd)"
+}
+
+function make_file() {
+  GOPATH="${GOPATH-${HOME}/go}"
+  DATE="$(date --date="$1" '+%Y-%m-%d')";shift
+
+  "${GOPATH}/bin/logbook" -date_override="${DATE}"
+
+  echo "${HOME}/logbook/${DATE}.md"
+}
+
+update_logbook &
+readonly UPDATE_LOGBOOK_PID=$!
+
+print_motd
+
+echo "Checking prodcert status..."
+if ! prodcertstatus 2>&1 > /dev/null; then
+  eval $(ssh-agent -s)
+
+  # Now restore prodaccess
+  prodaccess -g && update_motd
+fi
+
+if [[ ! -d "${LOGBOOK}" ]]; then
+  mkdir "${LOGBOOK}"
+fi
+
+# Wait for lobook to be downloaded
+wait "${UPDATE_LOGBOOK_PID}"
+
+TODAY="$(make_file 'today')"
+# Get the entry for the last one by grabbing the 2 last logbook entries (now
+# that we have generated today) and then taking the one that came before it. Due
+# to the natural lexicographic sorting this should work just fine.
+LAST="${LOGBOOK}/$(ls ${LOGBOOK} | sort | tail -n 2 | head -n 1)"
+
+exec vim +"windo set nonumber" +"wincmd k" -o "${LAST}" "${TODAY}"
