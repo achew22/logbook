@@ -1,0 +1,18 @@
+{
+  "2012-02-28": {
+    "path": "testdata/urls/2012-02-28.md",
+    "date": "2012-02-28",
+    "pastReferences": {
+      "2012-02-28": [
+        "Unknown node: Emph: '' \"\"",
+        "with",
+        "Unknown node: Emph: '' \"\""
+      ]
+    },
+    "errors": [
+      {
+        "message": "no valid spec parser found for spec \"url.com\""
+      }
+    ]
+  }
+}

@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -66,6 +67,42 @@ func TestEqualDate(t *testing.T) {
 		t.Run(n, func(t *testing.T) {
 			if !d.a.Equals(d.b) {
 				t.Errorf("Expected a to = b in testcase. a: %v, b: %v", d.a, d.b)
+			}
+		})
+	}
+}
+
+func TestParseTimespec(t *testing.T) {
+	tests := map[string]struct {
+		now Date
+		in  string
+		d   Date
+		err error
+	}{
+		"Explicit date 2001-02-03": {mustYmdToDate("2001-02-03"), "2001-02-03", mustYmdToDate("2001-02-03"), nil},
+		"Explicit date 2001-2-03":  {mustYmdToDate("2001-02-03"), "2001-2-03", mustYmdToDate("2001-02-03"), nil},
+		"Explicit date 2001-02-3":  {mustYmdToDate("2001-02-03"), "2001-02-3", mustYmdToDate("2001-02-03"), nil},
+		"Explicit date 2001-2-3":   {mustYmdToDate("2001-02-03"), "2001-2-3", mustYmdToDate("2001-02-03"), nil},
+		"Tomorrow":                 {mustYmdToDate("2001-02-03"), "tomorrow", mustYmdToDate("2001-02-04"), nil},
+		"case sensitive tomorrow":  {mustYmdToDate("2001-02-03"), "TOMorrow", mustYmdToDate("2001-02-04"), nil},
+		"Future date":              {mustYmdToDate("2019-03-11"), "2019-05-14", mustYmdToDate("2019-05-14"), nil},
+
+		"Error input": {mustYmdToDate("2001-02-03"), "82872--1", mustYmdToDate("2001-02-03"), fmt.Errorf("no valid spec parser found for spec \"82872--1\"")},
+	}
+	for n, test := range tests {
+		t.Run(n, func(t *testing.T) {
+			r, err := ParseTimespec(test.now, test.in)
+			if err == nil && test.err != nil {
+				t.Fatalf("Expected an error but didn't get one")
+			}
+			if err != nil && test.err == nil {
+				t.Fatalf("Expected no error but got [%v]", err)
+			}
+			if err != nil && err.Error() != test.err.Error() {
+				t.Fatalf("Expected error to be [%v], was [%v]", test.err, err)
+			}
+			if !test.d.Equals(r) {
+				t.Fatalf("Expected date to be [%v], was [%v]", r, test.d)
 			}
 		})
 	}

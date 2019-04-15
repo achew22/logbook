@@ -42,7 +42,16 @@ func (d Date) ToYmd() string {
 }
 
 func YmdToDate(d string) (Date, error) {
-	// Parse Year-Month-Date.
+	// Parse Year-Month-Date with all the leading zero combinartions.
+	if p, err := time.Parse("2006-1-2", d); err == nil {
+		return TimeToDate(p), nil
+	}
+	if p, err := time.Parse("2006-01-2", d); err == nil {
+		return TimeToDate(p), nil
+	}
+	if p, err := time.Parse("2006-1-02", d); err == nil {
+		return TimeToDate(p), nil
+	}
 	p, err := time.Parse("2006-01-02", d)
 	if err != nil {
 		return Date{}, err
@@ -93,6 +102,10 @@ var timespecMatchers = map[*regexp.Regexp]func(Date, []string) (Date, error){
 
 func ParseTimespec(d Date, spec string) (Date, error) {
 	spec = strings.ToLower(spec)
+
+	if res, err := YmdToDate(spec); err == nil {
+		return res, nil
+	}
 
 	for r, f := range timespecMatchers {
 		if matches := r.FindStringSubmatch(spec); matches != nil {

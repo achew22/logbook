@@ -30,7 +30,10 @@ import (
 )
 
 var (
-	expressionFinder = regexp.MustCompile("(.+):(.+)")
+	// Note that this uses the lazy + operator (+?) so that you match the
+	// smallest string. No instructions should require having a colon in
+	// it.
+	expressionFinder = regexp.MustCompile("(.+?):(.+)")
 )
 
 type ParseError struct {
@@ -155,19 +158,19 @@ func (p *Parser) walkNodes(d Date) func(n *blackfriday.Node, entering bool) blac
 	}
 }
 
-type find struct {
-	timespec string
-	remark   string
-}
-
 func (p *Parser) parseEventText(d Date, text string) {
-	var findings []find
+	type finding struct {
+		instruction string
+		remark      string
+	}
+
+	var findings []finding
 	for _, line := range strings.Split(text, "\n") {
 		r := expressionFinder.FindStringSubmatch(line)
 		if len(r) >= 3 {
-			findings = append(findings, find{
-				timespec: r[1],
-				remark:   r[2],
+			findings = append(findings, finding{
+				instruction: r[1],
+				remark:      r[2],
 			})
 		} else {
 			if len(findings) > 0 {
@@ -177,13 +180,46 @@ func (p *Parser) parseEventText(d Date, text string) {
 		}
 	}
 
-	// Nothing was extracted, don't attempt to parse.
-	if len(findings) == 0 {
-		return
-	}
-
+	// We now have a list of "findings" which are tuples of an instruction
+	// mapped to a remark. Attempt to parse them using first pass
+	// heuristics.
 	for _, f := range findings {
-		reminderDate, err := ParseTimespec(d, f.timespec)
+		instruction := strings.ToLower(f.instruction)
+		// Urls are often in my notes, ignore them.
+		if instruction == "http" || instruction == "https" {
+			continue
+		}
+
+		// Sometimes I preface my notes with the literal "note"
+		if instruction == "note" {
+			continue
+		}
+
+		// TODO: Parse perf notes around the end of the quarter.
+		if instruction == "perf" {
+			continue
+		}
+
+		// TODO: Parse TODO instructions into the todo list for the next day.
+		if instruction == "todo" {
+			continue
+		}
+
+		if strings.HasPrefix(instruction, "ai(") && strings.HasSuffix(instruction, ")") {
+			continue
+		}
+
+		// TODO: Parse todo lists
+		if strings.HasPrefix(instruction, "[ ]") || strings.HasPrefix(instruction, "[x]") {
+			continue
+		}
+
+		// Bazel targets also get caught up in this //foo:bar. Ignore by matching "//"
+		if strings.HasPrefix(instruction, "//") {
+			continue
+		}
+
+		reminderDate, err := ParseTimespec(d, f.instruction)
 		if err != nil {
 			p.emitError(d, err)
 		}
